@@ -1,0 +1,8 @@
+.env
+env/
+config.toml
+client_secrets.json
+token.json
+*.json
+token*
+__pycahce__
