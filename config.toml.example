@@ -1,0 +1,5 @@
+[youtube]
+api_key = "YOUR_API_KEY"
+channel_id = "YOUR_CHANNEL_ID"
+playlist_id = "YOUR_PLAYLIST_ID"
+folder_path = "/path/to/folder"
