@@ -1,18 +1,18 @@
-import os
-import google.auth
-import json
-import time
-import toml
 import datetime
+import json
+import os
+import time
 from random import randint
+
+import google.auth
+import toml
+from google.oauth2.credentials import Credentials
+from google_apis import create_service
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
-from google.oauth2.credentials import Credentials
-from google_apis import create_service
-from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-
+from watchdog.observers import Observer
 
 # Load the configuration from the TOML file
 config = toml.load("config.toml")
@@ -27,83 +27,88 @@ CHANNEL_ID = config["youtube"]["channel_id"]
 CLIENT_SECRETS_FILE = open(config["youtube"]["client_secrets_file"], "r").read()
 
 # Get the playlist ID
-#PLAYLIST_ID = config["youtube"]["playlist_id"]
+# PLAYLIST_ID = config["youtube"]["playlist_id"]
 
 # Get the folder path
 FOLDER_PATH = config["youtube"]["folder_path"]
 
 # Replace with the title and description of the video
-#VIDEO_TITLE = "My Video"
-#VIDEO_DESCRIPTION = "This is my video"
+# VIDEO_TITLE = "My Video"
+# VIDEO_DESCRIPTION = "This is my video"
 
 # Get the list of scopes
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
 API_NAME = "youtube"
 API_VERSION = "v3"
 
-def make_upload(video_title):
+
+def make_upload(video_title, file_path):
     # Load the client secrets file
     service = create_service("client_secrets.json", API_NAME, API_VERSION, SCOPES)
-    
+
     # Create a request to upload the video
     print("Uploading the video....")
-    
-    upload_time = (datetime.datetime.now() + datetime.timedelta(days=10)).isoformat() + ".000Z"
+
+    upload_time = (
+        datetime.datetime.now() + datetime.timedelta(days=10)
+    ).isoformat() + ".000Z"
     request_body = {
         "snippet": {
-            "title": video_title + "#shots #funny #funnyvideo",
+            "title": video_title + " #shots #funny #funnyvideo",
             "description": "#shots #funny #funnyvideo shorts fun shorts minecraft voice female",
             "categoryId": "",
-            "tags": ["shorts"]
+            "tags": ["shorts"],
         },
         "status": {
             "privacyStatus": "public",
             "publishedAt": upload_time,
-            "selfDeclaredMadeForKids": False
+            "selfDeclaredMadeForKids": False,
         },
-        "notifySubscribers": True
+        "notifySubscribers": True,
     }
     media_file = MediaFileUpload(file_path)
-    response_video_upload = service.videos().insert(
-        part="snippet, status",
-        body=request_body,
-        media_body=media_file
-    ).execute()
-    uploaded_video_id = response_video_upload.get('id')
+    response_video_upload = (
+        service.videos()
+        .insert(part="snippet, status", body=request_body, media_body=media_file)
+        .execute()
+    )
+    uploaded_video_id = response_video_upload.get("id")
 
     print("Video Uploaded Wooohooo....")
     print(f"Video '{video_title}' was added")
 
+
 class ChangeHandler(FileSystemEventHandler):
     def on_created(self, event):
-        
+
         # Check if the event is a file creation
         if event.is_directory:
             return
-        
+
         # Get the path of the new file
         file_path = event.src_path
-        
+
         # Check if the file is a video file
         if not file_path.endswith(".mp4"):
             return
-        
+
         # Get the video title from the file name
         video_title = os.path.basename(file_path).split(".")[0]
-        #print(f"Got a new file:{file_path}")
-        
-        video_title = " ".join(video_title.split(" ")[:randint(4,10)])
+        # print(f"Got a new file:{file_path}")
+
+        video_title = " ".join(video_title.split(" ")[: randint(4, 10)])
         print(video_title)
-        
+
         # Upload the video to YouTube
         try:
-            make_upload(video_title)
-            
+            make_upload(video_title, file_path)
+
             time.sleep(120)
             print("Waiting....")
-        
+
         except HttpError as error:
             print(f"An error occurred: {error}")
+
 
 def main():
     event_handler = ChangeHandler()
@@ -118,6 +123,7 @@ def main():
         observer.stop()
     observer.join()
 
+
 if __name__ == "__main__":
-    #test()
+    # test()
     main()
